@@ -54,7 +54,10 @@ export const intersectsPolyline = (
       const p2 = polyline.points[i + 1];
 
       const rect = lineToRect(p1, p2, polyline.strokeWidth);
-      return intersectsRect(l, rect);
+      const intersecting = intersectsRect(l, rect);
+      if (intersecting) {
+        return true;
+      }
     }
     return false;
   } else {
