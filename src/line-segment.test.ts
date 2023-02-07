@@ -1,5 +1,8 @@
+import { Ellipse } from "./ellipse";
 import {
+  clipWithEllipse,
   clipWithRect,
+  intersectsEllipse,
   intersectsLineSegment,
   intersectsRect,
   LineSegment,
@@ -193,6 +196,79 @@ describe("clipWithRect", () => {
       };
 
       expect(clipWithRect(l, rect)).toBeNull();
+    });
+  });
+});
+
+describe("intersectsEllipse", () => {
+  describe("when intersects", () => {
+    it("returns true", () => {
+      const l: LineSegment = [
+        [8, 1],
+        [5, 7],
+      ];
+      const ellipse: Ellipse = {
+        cx: 5,
+        cy: 4,
+        rx: 3,
+        ry: 2,
+      };
+      expect(intersectsEllipse(l, ellipse)).toEqual(true);
+    });
+  });
+
+  describe("when not intersects", () => {
+    it("returns true", () => {
+      const l: LineSegment = [
+        [8, 1],
+        [10, 7],
+      ];
+      const ellipse: Ellipse = {
+        cx: 5,
+        cy: 4,
+        rx: 3,
+        ry: 2,
+      };
+      expect(intersectsEllipse(l, ellipse)).toEqual(false);
+    });
+  });
+});
+
+describe("clipWithEllipse", () => {
+  describe("when intersects", () => {
+    it("returns line segment", () => {
+      const l: LineSegment = [
+        [2, 0],
+        [11, 6],
+      ];
+      const ellipse: Ellipse = {
+        cx: 5,
+        cy: 4,
+        rx: 3,
+        ry: 2,
+      };
+
+      const clipped = clipWithEllipse(l, ellipse);
+      expect(clipped![0][0]).toBeCloseTo(8);
+      expect(clipped![0][1]).toBeCloseTo(4);
+      expect(clipped![1][0]).toBeCloseTo(5);
+      expect(clipped![1][1]).toBeCloseTo(2);
+    });
+  });
+
+  describe("when not intersects", () => {
+    it("returns null", () => {
+      const l: LineSegment = [
+        [8, 1],
+        [10, 7],
+      ];
+      const ellipse: Ellipse = {
+        cx: 5,
+        cy: 4,
+        rx: 3,
+        ry: 2,
+      };
+      expect(clipWithEllipse(l, ellipse)).toBeNull();
     });
   });
 });

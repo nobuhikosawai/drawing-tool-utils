@@ -1,4 +1,7 @@
+import { Ellipse, getEllipseBound } from "./ellipse";
+import { getInfiniteLine, getIntersectionsWithEllipse } from "./infinite-line";
 import { rotate } from "./math";
+import { getPointBound, isInsideEllipse } from "./point";
 import { Rect, vertices } from "./rect";
 
 export type Point = [number, number];
@@ -123,4 +126,104 @@ export const clipWithRect = (
     [x01, y01],
     [x02, y02],
   ];
+};
+
+/*
+ * Here because I was not sure the direct answer, several step is done.
+ * First, check if the line segment is possible to interact by checking if the line segemt is in the bounding box or any of the end is in the ellipse.
+ * Then, calculate the intersection. To do this, get the line equation in general form and calculate the intersection.
+ */
+export const intersectsEllipse = (
+  lineSegment: LineSegment,
+  ellipse: Ellipse
+): boolean => {
+  const [p1, p2] = lineSegment;
+  const [x1, y1] = p1,
+    [x2, y2] = p2;
+  const { top, left, right, bottom } = getEllipseBound(ellipse);
+
+  if (
+    (x1 < left && x2 < left) ||
+    (x1 > right && x2 > right) ||
+    (y1 < top && y2 < top) ||
+    (y1 > bottom && y2 > bottom)
+  ) {
+    return false;
+  }
+
+  const isP1Inside = isInsideEllipse(p1, ellipse);
+  const isP2Inside = isInsideEllipse(p2, ellipse);
+
+  if (isP1Inside && isP2Inside) {
+    return true;
+  }
+
+  if (
+    !isP1Inside &&
+    !isP2Inside &&
+    Math.sign(x1 - ellipse.cx) === Math.sign(x2 - ellipse.cx) &&
+    Math.sign(y1 - ellipse.cy) === Math.sign(y2 - ellipse.cy)
+  ) {
+    return false;
+  }
+  const lineEquation = getInfiniteLine(p1, p2);
+  const intersections = getIntersectionsWithEllipse(lineEquation, ellipse);
+  return intersections.length > 0;
+};
+
+export const clipWithEllipse = (
+  lineSegment: LineSegment,
+  ellipse: Ellipse
+): LineSegment | null => {
+  const [p1, p2] = lineSegment;
+  const [x1, y1] = p1,
+    [x2, y2] = p2;
+  const { top, left, right, bottom } = getEllipseBound(ellipse);
+
+  if (
+    (x1 < left && x2 < left) ||
+    (x1 > right && x2 > right) ||
+    (y1 < top && y2 < top) ||
+    (y1 > bottom && y2 > bottom)
+  ) {
+    return null;
+  }
+
+  const isP1Inside = isInsideEllipse(p1, ellipse);
+  const isP2Inside = isInsideEllipse(p2, ellipse);
+
+  if (isP1Inside && isP2Inside) {
+    return [p1, p2];
+  } else {
+    if (
+      !isP1Inside &&
+      !isP2Inside &&
+      Math.sign(x1 - ellipse.cx) === Math.sign(x2 - ellipse.cx) &&
+      Math.sign(y1 - ellipse.cy) === Math.sign(y2 - ellipse.cy)
+    ) {
+      return null;
+    }
+
+    const lineEquation = getInfiniteLine(p1, p2);
+    const intersections = getIntersectionsWithEllipse(lineEquation, ellipse);
+    if (intersections.length === 0) {
+      return null;
+    }
+    if (!isP1Inside && !isP2Inside) {
+      return intersections as [Point, Point];
+    }
+    const { minX, maxX, minY, maxY } = getPointBound(p1, p2);
+    const intersection = intersections.find(
+      (intersection) =>
+        intersection[0] >= minX &&
+        intersection[0] <= maxX &&
+        intersection[1] >= minY &&
+        intersection[1] <= maxY
+    )!;
+    if (isP1Inside) {
+      return [p1, intersection];
+    } else {
+      return [intersection, p2];
+    }
+  }
 };
